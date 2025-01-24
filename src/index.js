@@ -6,12 +6,13 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY;
 import { Telegraf, Markup } from "telegraf";
 import { message } from "telegraf/filters";
 import { createClient } from "@supabase/supabase-js";
-console.log(SUPABASE_KEY);
-console.log(SUPABASE_URL);
 
 // File imports
 import messages from "./utils/messages.js";
-import { checkRegistration, registerUser } from "./services/supabase.js";
+import { checkRegistration, registerUser, removeTrial } from "./services/supabase.js";
+import { Invoice, subscriptionPaymentType, singlePaymentType } from "./services/telegram.js";
+import { processDocument, validateFile } from "./services/processing.js";
+
 const HTML = { parse_mode: "HTML" };
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -45,20 +46,48 @@ bot.use(async (ctx, next) => {
 });
 
 bot.on(message("document"), async (ctx) => {
-  console.log(ctx.message.document);
-  const subscriptionStatus = getSubscriptionStatus(ctx);
-  if (subscriptionStatus === "noSubscription") {
-    await sendPaymentInvoice(ctx);
-    return;
+  // Handle no subscription
+  if (ctx.user.subscription_status === "none") {
+    try {
+      validateFile(ctx);
+      console.log("no subscription");
+      const subscriptionLink = await new Invoice(ctx, subscriptionPaymentType).createInvoiceLink();
+      const singleLink = await new Invoice(ctx, singlePaymentType).createInvoiceLink();
+      await ctx.reply(messages.pay, {
+        parse_mode: "HTML",
+        reply_to_message_id: ctx.message.message_id,
+        ...Markup.inlineKeyboard([
+          [Markup.button.url("Above file only -  20⭐️", singleLink)],
+          [Markup.button.url("Unlimited files -  250✨/mo", subscriptionLink)],
+        ]),
+      });
+      return;
+    } catch (error) {
+      ctx.reply(error.message);
+      return;
+    }
   }
+  // Handle trial or subscription
   try {
     const newFilePath = await processDocument(ctx);
-    await replyWithNewDoc(ctx, newFilePath);
+    ctx.reply(newFilePath); // <- test delete after
+    // await replyWithNewDoc(ctx, newFilePath); <- PRODUCTION
   } catch (error) {
-    ctx.reply(error.message);
+    await ctx.reply(error.message);
+    return;
   }
-
-  const isSentSuccess = await processDocument(ctx);
+  // Handle trial ending
+  if (ctx.user.subscription_status === "trial") {
+    await removeTrial(ctx);
+    await ctx.reply(
+      "See for yourself\n\n1. Save the photo to device and open it in gallery\n2. Look at photo info by tapping (i)\n3. See all the iPhone metadata added including location etc.\n\n*We add a LOT more info than you can see here, to see full extent go to exif.tool.",
+      HTML
+    );
+    await ctx.reply(
+      "<b>Platforms will promote your account to the set location, reduce ban risks, increase DM limits, avoid AI duplicate checks, and boost account trust giving it better privileges.</b>",
+      HTML
+    );
+  }
 });
 
 bot.command("setlocation", async (ctx) => {

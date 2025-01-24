@@ -4,6 +4,7 @@ const messages = {
     "<b>🗺️ Send a location where you want the content to appear as taken from.</b>\n\nClick the 📎 icon and see 'location' in the bottom bar.\n\n<blockquote expandable><b>How adding location helps?</b>\n\n1. Posts are more likely to be pushed to people in that location.  You can target high income countries like USA, UAE etc.\n\n2. Your account is less likely to get banned as it's assumed you're posting raw content taken on an iPhone - not copied, AI etc. This gives your account more trust in the algorithm and it will be less likely to be flagged.</blockquote>",
   register:
     "We don't have you on the system yet. Please register by sending a location that you want your photos to appear as taken from.  Send a location by clicking the 📎 icon and selecting 'location' in the bottom bar.",
+  pay: "Ah it looks like you don't have a subscription. Either subscribe for <b>unlimited requests</b> or pay for a <b>single request</b>.",
 };
 
 export default messages;

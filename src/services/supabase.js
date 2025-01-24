@@ -35,6 +35,11 @@ const registerUser = async (ctx) => {
   }
 };
 
+const removeTrial = async (ctx) => {
+  const userId = ctx.from.id;
+  const { data, error } = await supabase.from("users").update({ has_trial: false }).eq("user_id", userId);
+};
+
 // Helper function to create ctx.user object
 const createUserSubscriptionObject = (ctx, data) => {
   ctx.user = {
@@ -53,4 +58,4 @@ const getSubscriptionStatus = ({ subscription_date_end, has_trial }) => {
   return "none";
 };
 
-export { checkRegistration, registerUser };
+export { checkRegistration, registerUser, removeTrial };
