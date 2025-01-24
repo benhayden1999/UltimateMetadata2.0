@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "NODE_NO_WARNINGS=1 vite"
+    "start": "NODE_NO_WARNINGS=1 vite",
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -18,5 +19,10 @@
     "@supabase/supabase-js": "^2.48.0",
     "dotenv": "^16.4.7",
     "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "install": "^0.13.0",
+    "nodemon": "^3.1.9",
+    "npm": "^11.0.0"
   }
 }
