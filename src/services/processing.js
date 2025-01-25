@@ -4,24 +4,33 @@ import axios from "axios";
 import { modifyMetadata } from "./exif.js";
 
 const processDocument = async (ctx) => {
-  validateFile(ctx);
-  const telegramFileUrl = await getfileUrl(ctx);
-  const localFilePath = await downloadFileToTemp(telegramFileUrl);
-  await modifyMetadata(ctx, localFilePath);
-  return localFilePath;
+  const fileInfo = await getfileInfo(ctx);
+  try {
+    const { file_url, file_size } = fileInfo;
+    const localFilePath = await downloadFileToTemp(file_url);
+    const metadata = await modifyMetadata(ctx, localFilePath, file_size);
+    return { localFilePath, metadata };
+  } catch (error) {
+    throw new Error("Error processing file metadata");
+  }
 };
 
 // Get telegram file URL
-const getfileUrl = async (ctx) => {
+const getfileInfo = async (ctx) => {
   let file_id;
   if (ctx.message.successful_payment?.invoice_payload) {
     file_id = ctx.message.successful_payment.invoice_payload;
   } else if (ctx.message.document?.file_id) {
     file_id = ctx.message.document.file_id;
-  } else throw new Error("Error getting file id");
-
-  const fileInstace = await ctx.telegram.getFileLink(file_id);
-  return fileInstace.href;
+  } else throw new Error("Error getting file_id from message");
+  try {
+    const { href: file_url } = await ctx.telegram.getFileLink(file_id);
+    const { file_size } = await ctx.telegram.getFile(file_id);
+    const fileInfo = { file_url, file_size };
+    return fileInfo;
+  } catch (error) {
+    throw new Error("Error getting file info (file_url, file_size)");
+  }
 };
 
 // Download file to /tmp
